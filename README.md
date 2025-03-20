@@ -17,8 +17,9 @@ A fully functional and responsive Todo web application with authentication, data
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: NextAuth.js (Google + Credentials)
 - **Styling**: TailwindCSS + ShadCN UI
-- **Testing**: Jest
-- **Deployment**: Vercel/Netlify/GCP
+
+
+- **Deployment**: Not Completed (Time ended)
 
 ## Installation
 
