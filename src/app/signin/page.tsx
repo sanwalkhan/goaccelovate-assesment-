@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -12,11 +11,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function SignIn() {
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<p>Loading...</p>}>
+      <SignInComponent />
+    </Suspense>
+  );
+}
+
+function SignInComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -93,7 +100,7 @@ export default function SignIn() {
           </form>
 
           <div className="mt-4 text-center text-sm">
-            <span>Dont have an account? </span>
+            <span>Don't have an account? </span>
             <Link href="/register" className="text-blue-600 hover:underline">
               Register
             </Link>
