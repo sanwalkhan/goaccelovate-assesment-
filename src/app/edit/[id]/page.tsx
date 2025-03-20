@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
@@ -18,10 +17,8 @@ interface Task {
   userId: string;
 }
 
-import { useParams } from "next/navigation";
-
 export default function EditTask() {
-  const params = useParams(); // Get the dynamic params correctly
+  const params = useParams();
   const router = useRouter();
   const [task, setTask] = useState<Task | null>(null);
   const [content, setContent] = useState("");
@@ -30,36 +27,46 @@ export default function EditTask() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!params?.id) return; // Ensure params exist
+    if (!params?.id) {
+      setError("Task ID is missing");
+      setIsLoading(false);
+      return;
+    }
 
     const fetchTask = async () => {
       try {
+        console.log("Fetching task with ID:", params.id);
         const response = await fetch(`/api/tasks/${params.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setTask(data);
-          setContent(data.content);
-        } else {
-          const errorData = await response.json();
-          setError(errorData.error || "Failed to fetch task");
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Failed to fetch task");
         }
+
+        const data = await response.json();
+        setTask(data);
+        setContent(data.content);
       } catch (error) {
-        setError("An unexpected error occurred");
+        setError("An unexpected error occurred while fetching the task");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchTask();
-  }, [params?.id]); // Use optional chaining in case `params` is undefined
+  }, [params?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!content.trim()) return;
-    
+
+    if (!content.trim()) {
+      setError("Task content cannot be empty");
+      return;
+    }
+
     setIsSubmitting(true);
-    
+    setError("");
+
     try {
       const response = await fetch(`/api/tasks/${params.id}`, {
         method: "PATCH",
@@ -69,14 +76,14 @@ export default function EditTask() {
         body: JSON.stringify({ content }),
       });
 
-      if (response.ok) {
-        router.push("/dashboard");
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || "Failed to update task");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to update task");
       }
+
+      router.push("/dashboard");
     } catch (error) {
-      setError("An unexpected error occurred");
+      setError("An unexpected error occurred while updating the task");
     } finally {
       setIsSubmitting(false);
     }
@@ -95,9 +102,7 @@ export default function EditTask() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 mb-4">{error}</p>
-          <Button onClick={() => router.push("/dashboard")}>
-            Back to Dashboard
-          </Button>
+          <Button onClick={() => router.push("/dashboard")}>Back to Dashboard</Button>
         </div>
       </div>
     );
@@ -112,12 +117,7 @@ export default function EditTask() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Input
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Task content"
-            className="w-full"
-          />
+          <Input value={content} onChange={(e) => setContent(e.target.value)} placeholder="Task content" className="w-full" />
         </div>
 
         <div className="flex space-x-2">
@@ -131,11 +131,7 @@ export default function EditTask() {
               "Update Task"
             )}
           </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => router.push("/dashboard")}
-          >
+          <Button type="button" variant="outline" onClick={() => router.push("/dashboard")}>
             Cancel
           </Button>
         </div>
