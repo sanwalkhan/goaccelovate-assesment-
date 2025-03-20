@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
@@ -7,8 +5,44 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 
 const prisma = new PrismaClient();
 
+
+export async function GET(
+    request: Request,
+    { params }: { params: { id: string } }
+  ) {
+    const session = await getServerSession(authOptions);
+  
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  
+    try {
+      const task = await prisma.task.findUnique({
+        where: {
+          id: params.id,
+        },
+      });
+  
+      if (!task) {
+        return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      }
+  
+      if (task.userId !== session.user.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+  
+      return NextResponse.json(task);
+    } catch (error) {
+      return NextResponse.json(
+        { error: "Failed to fetch task" },
+        { status: 500 }
+      );
+    }
+  }
+
+
 // Update a task (PATCH)
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, context: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
@@ -16,20 +50,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   try {
-    const { id } = params;
-    const { content } = await req.json();
-
+    const id = context.params?.id; // ✅ Correct way to access params
     if (!id) {
       return NextResponse.json({ error: "Task ID is required" }, { status: 400 });
     }
+
+    const { content } = await req.json();
 
     if (!content || content.trim() === "") {
       return NextResponse.json({ error: "Task content is required" }, { status: 400 });
     }
 
-    const existingTask = await prisma.task.findUnique({
-      where: { id },
-    });
+    const existingTask = await prisma.task.findUnique({ where: { id } });
 
     if (!existingTask) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
@@ -52,7 +84,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 }
 
 // Delete a task (DELETE)
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, context: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
@@ -60,7 +92,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   }
 
   try {
-    const { id } = params;
+    const id = context.params?.id; // ✅ Correct way to access params
 
     if (!id) {
       return NextResponse.json({ error: "Task ID is required" }, { status: 400 });
